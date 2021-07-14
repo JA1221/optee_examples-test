@@ -64,7 +64,7 @@ int main(void)
 	 * world!" in the log when the session is created.
 	 */
 	res = TEEC_OpenSession(&ctx, &sess, &uuid,
-			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+				   TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
 	if (res != TEEC_SUCCESS)
 		errx(1, "TEEC_Opensession failed with code 0x%x origin 0x%x",
 			res, err_origin);
@@ -92,17 +92,17 @@ int main(void)
 	 * TA_HELLO_WORLD_CMD_INC_VALUE is the actual function in the TA to be
 	 * called.
 	 */
-	sprintf(buffer, "Invoking TA to increment %d\n", op.params[0].value.a);
-	printf("%s", buffer);
-	sendSocket(buffer);
+	sprintf(msg, "Invoking TA to increment %d\n", op.params[0].value.a);
+	printf("%s", msg);
+	sendSocket(msg);
 	res = TEEC_InvokeCommand(&sess, TA_HELLO_WORLD_CMD_INC_VALUE, &op,
 				 &err_origin);
 	if (res != TEEC_SUCCESS)
 		errx(1, "TEEC_InvokeCommand failed with code 0x%x origin 0x%x",
 			res, err_origin);
-	sprintf(buffer, "TA incremented value to %d\n", op.params[0].value.a);
-	printf("%s", buffer);
-	sendSocket(buffer);
+	sprintf(msg, "TA incremented value to %d\n", op.params[0].value.a);
+	printf("%s", msg);
+	sendSocket(msg);
 
 	/*
 	 * We're done with the TA, close the session and
@@ -120,30 +120,30 @@ int main(void)
 }
 
 int sendSocket(char *msg) {
-    // create socket
-    int sockfd = socket(AF_INET , SOCK_STREAM , 0);
-    if(sockfd == -1) {
-        printf("Fail to create a socket.\n");
-        return -1;
-    }
+	// create socket
+	int sockfd = socket(AF_INET , SOCK_STREAM , 0);
+	if(sockfd == -1) {
+		printf("Fail to create a socket.\n");
+		return -1;
+	}
 
-    // server socket
-    struct sockaddr_in serverAddr;
-    memset(&serverAddr, 0, sizeof(serverAddr));
+	// server socket
+	struct sockaddr_in serverAddr;
+	memset(&serverAddr, 0, sizeof(serverAddr));
 
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = inet_addr("140.115.52.115");
-    serverAddr.sin_port = htons(4567);
-    
-    int err = connect(sockfd,(struct sockaddr *)&serverAddr,sizeof(serverAddr));
-    if(err == -1) {
-        printf("Connection error\n");
-        return -1;
-    }
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_addr.s_addr = inet_addr("140.115.52.115");
+	serverAddr.sin_port = htons(4567);
+	
+	int err = connect(sockfd,(struct sockaddr *)&serverAddr,sizeof(serverAddr));
+	if(err == -1) {
+		printf("Connection error\n");
+		return -1;
+	}
 
-    // Send a message to server
-    send(sockfd, msg, strlen(msg)+1, 0);
-    close(sockfd);
-    
-    return 0;
+	// Send a message to server
+	send(sockfd, msg, strlen(msg)+1, 0);
+	close(sockfd);
+	
+	return 0;
 }
