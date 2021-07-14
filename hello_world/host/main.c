@@ -27,6 +27,7 @@
 
 #include <err.h>
 #include <stdio.h>
+
 #include <string.h>
 
 /* OP-TEE TEE client API (built by optee_client) */
@@ -34,6 +35,14 @@
 
 /* To the the UUID (found the the TA's h-file(s)) */
 #include <hello_world_ta.h>
+
+// socket
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+int sendSocket(char *msg);
 
 int main(void)
 {
@@ -43,6 +52,7 @@ int main(void)
 	TEEC_Operation op;
 	TEEC_UUID uuid = TA_HELLO_WORLD_UUID;
 	uint32_t err_origin;
+	char msg[1024];
 
 	/* Initialize a context connecting us to the TEE */
 	res = TEEC_InitializeContext(NULL, &ctx);
@@ -82,13 +92,17 @@ int main(void)
 	 * TA_HELLO_WORLD_CMD_INC_VALUE is the actual function in the TA to be
 	 * called.
 	 */
-	printf("Invoking TA to increment %d\n", op.params[0].value.a);
+	sprintf(buffer, "Invoking TA to increment %d\n", op.params[0].value.a);
+	printf("%s", buffer);
+	sendSocket(buffer);
 	res = TEEC_InvokeCommand(&sess, TA_HELLO_WORLD_CMD_INC_VALUE, &op,
 				 &err_origin);
 	if (res != TEEC_SUCCESS)
 		errx(1, "TEEC_InvokeCommand failed with code 0x%x origin 0x%x",
 			res, err_origin);
-	printf("TA incremented value to %d\n", op.params[0].value.a);
+	sprintf(buffer, "TA incremented value to %d\n", op.params[0].value.a);
+	printf("%s", buffer);
+	sendSocket(buffer);
 
 	/*
 	 * We're done with the TA, close the session and
@@ -103,4 +117,33 @@ int main(void)
 	TEEC_FinalizeContext(&ctx);
 
 	return 0;
+}
+
+int sendSocket(char *msg) {
+    // create socket
+    int sockfd = socket(AF_INET , SOCK_STREAM , 0);
+    if(sockfd == -1) {
+        printf("Fail to create a socket.\n");
+        return -1;
+    }
+
+    // server socket
+    struct sockaddr_in serverAddr;
+    memset(&serverAddr, 0, sizeof(serverAddr));
+
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = inet_addr("140.115.52.115");
+    serverAddr.sin_port = htons(4567);
+    
+    int err = connect(sockfd,(struct sockaddr *)&serverAddr,sizeof(serverAddr));
+    if(err == -1) {
+        printf("Connection error\n");
+        return -1;
+    }
+
+    // Send a message to server
+    send(sockfd, msg, strlen(msg)+1, 0);
+    close(sockfd);
+    
+    return 0;
 }
